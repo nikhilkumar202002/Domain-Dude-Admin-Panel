@@ -10,19 +10,21 @@ require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const roleRoutes = require('./routes/roleRoutes');
 const staffRoutes = require('./routes/staffRoutes');
+const clientRoutes = require('./routes/clientRoutes');
 
 const app = express();
 
 // --- SECURITY MIDDLEWARE ---
-app.use(helmet()); // Protects HTTP headers
-app.use(cors());   // Allows frontend connection
-app.use(express.json()); // Parses incoming JSON data
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // --- ROUTES ---
-app.use('/api/auth', authRoutes); // Used the variable defined at the top
+app.use('/api/auth', authRoutes);
 app.use('/api/roles', roleRoutes);
-app.use('/api/staff', staffRoutes); // Changed 'staffs' to 'staff' to match conventions
+app.use('/api/staff', staffRoutes); 
+app.use('/api/clients', clientRoutes);
 
 // --- ERROR HANDLING ---
 app.use((err, req, res, next) => {
