@@ -17,7 +17,7 @@ export const SidebarData = [
   },
    {
     title: 'Portfolio',
-    path: '/Allportfolio',
+    path: '/Allprojects',
     icon: <AiOutlinePicture />,
   },
   {
@@ -41,7 +41,7 @@ export const SidebarData = [
   },
   {
     title: 'Team',
-    path: '/allstaffs',
+    path: '/staff',
     icon: <FiUsers />,
   },
   {

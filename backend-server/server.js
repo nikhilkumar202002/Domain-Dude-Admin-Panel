@@ -11,22 +11,22 @@ const authRoutes = require('./routes/authRoutes');
 const roleRoutes = require('./routes/roleRoutes');
 const staffRoutes = require('./routes/staffRoutes');
 const clientRoutes = require('./routes/clientRoutes');
-
+const categoryRoutes = require('./routes/categoryRoutes');
+const projectRoutes = require('./routes/projectRoutes');
 const app = express();
 
-// --- SECURITY MIDDLEWARE ---
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// --- ROUTES ---
 app.use('/api/auth', authRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/staff', staffRoutes); 
 app.use('/api/clients', clientRoutes);
-
-// --- ERROR HANDLING ---
+app.use('/api/project-categories', categoryRoutes);
+app.use('/api/projects', require('./routes/projectRoutes'));
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Something broke!');

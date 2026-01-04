@@ -16,4 +16,6 @@ router.get('/admin-dashboard', verifyToken, isAdmin, (req, res) => {
   res.json({ message: 'Welcome Admin! You have full access.' });
 });
 
+router.post('/logout', authController.logout);
+
 module.exports = router;

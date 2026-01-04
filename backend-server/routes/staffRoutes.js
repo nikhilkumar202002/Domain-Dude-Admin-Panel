@@ -36,22 +36,15 @@ const validateUpdate = [
   body('joining_date').isISO8601().withMessage('Date must be YYYY-MM-DD')
 ];
 
-// --- ROUTES ---
-
-// 1. Create Staff (Admins & Super Admins)
 router.post(
   '/', 
   verifyToken, 
-  isAdmin, // <--- This now works because we imported it
+  isAdmin,
   upload.single('profile_image'), 
   validateStaff, 
   staffController.createStaff
 );
-
-// 2. Get All Staff (Admins & Super Admins)
 router.get('/', verifyToken, isAdmin, staffController.getAllStaff);
-
-// 3. Update Staff (Admins & Super Admins)
 router.put(
   '/:id', 
   verifyToken, 
@@ -60,8 +53,7 @@ router.put(
   validateUpdate,
   staffController.updateStaff
 );
-
-// 4. Delete Staff (Super Admin Only)
 router.delete('/:id', verifyToken, isSuperAdmin, staffController.deleteStaff);
+router.get('/:id', staffController.getStaffById);
 
 module.exports = router;

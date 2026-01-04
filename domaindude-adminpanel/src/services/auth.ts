@@ -22,6 +22,10 @@ export const authAPI = {
     const response = await client.post<AuthResponse>('/auth/login', credentials);
     return response.data;
   },
-  
 
+  logout: async () => {
+    const response = await client.post('/auth/logout');
+    return response.data;
+  }
+  
 };

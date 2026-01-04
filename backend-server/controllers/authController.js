@@ -44,3 +44,12 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+exports.logout = async (req, res) => {
+  try {
+    res.status(200).json({ message: 'Logged out successfully' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+};

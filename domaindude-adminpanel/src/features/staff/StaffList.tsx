@@ -1,23 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { staffAPI, Staff } from '../../services/Allservices'; // Adjust path if needed
-import { FiEdit2, FiTrash2, FiPlus, FiSearch, FiPhone, FiCalendar } from 'react-icons/fi';
+import { staff as staffService, Staff } from '../../services/Allservices'; 
+import { FiTrash2, FiPlus, FiPhone, FiCalendar, FiEdit, FiEye } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 
 const StaffList = () => {
-  const [staff, setStaff] = useState<Staff[]>([]);
+  const [staffList, setStaffList] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
 
-  // Fetch Staff on Mount
+  // A simple gray avatar placeholder (Base64) - Works offline
+  const PLACEHOLDER_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+
   useEffect(() => {
-    loadStaff();
+    fetchStaff();
   }, []);
 
-  const loadStaff = async () => {
+  const fetchStaff = async () => {
     try {
-      const data = await staffAPI.getAll();
-      setStaff(data);
+      setLoading(true);
+      const data = await staffService.getAll(); 
+      if (Array.isArray(data)) {
+        setStaffList(data);
+      } else {
+        setStaffList([]); 
+      }
     } catch (error) {
-      console.error("Failed to fetch staff:", error);
+      console.error('Error fetching staff:', error);
     } finally {
       setLoading(false);
     }
@@ -26,149 +34,107 @@ const StaffList = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm('Are you sure you want to remove this staff member?')) {
       try {
-        await staffAPI.delete(id);
-        // Optimistic update: remove from UI immediately
-        setStaff(prev => prev.filter(item => item.id !== id));
+        await staffService.delete(id);
+        setStaffList(prev => prev.filter(item => item.id !== id));
       } catch (error) {
-        alert('Failed to delete staff member');
+        console.error("Error deleting staff", error);
+        alert("Failed to delete staff member");
       }
     }
   };
 
-  // Filter staff based on search
-  const filteredStaff = staff.filter(person => 
-    person.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    person.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    person.position.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  if (loading) return <div className="p-10 text-center text-zinc-500">Loading staff data...</div>;
+  const getImageUrl = (path?: string | File) => {
+    if (!path || typeof path !== 'string') return PLACEHOLDER_IMAGE;
+    let cleanPath = path.replace(/\\/g, '/');
+    if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
+    return `http://localhost:5000/${cleanPath}`;
+  };
 
   return (
-    <div className="space-y-6">
-      
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Staff Management</h1>
-          <p className="text-zinc-400 text-sm mt-1">Manage your team members and their roles.</p>
-        </div>
-        <button className="flex items-center gap-2 bg-brand-primary hover:bg-brand-secondary text-white px-4 py-2 rounded-lg transition-colors font-medium text-sm">
-          <FiPlus className="w-4 h-4" />
-          Add New Staff
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-white">Staff Team</h1>
+        <button 
+          onClick={() => navigate('/staff/create')}
+          className="flex items-center gap-2 bg-brand-primary px-4 py-2 rounded-lg text-white font-medium hover:opacity-90 transition-opacity"
+        >
+          <FiPlus /> Add Member
         </button>
       </div>
 
-      {/* Search and Filter Bar */}
-      <div className="flex items-center bg-zinc-900/50 p-2 rounded-xl border border-zinc-800 w-full md:w-96">
-        <FiSearch className="text-zinc-400 ml-2 w-5 h-5" />
-        <input 
-          type="text" 
-          placeholder="Search by name or position..." 
-          className="bg-transparent border-none focus:ring-0 text-white w-full ml-2 text-sm placeholder-zinc-500"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-
-      {/* Staff Table */}
-      <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/30">
+      <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
         <table className="w-full text-left text-sm text-zinc-400">
-          <thead className="bg-zinc-900 text-xs uppercase font-semibold text-zinc-300">
+          <thead className="bg-zinc-950 text-zinc-200 uppercase font-medium">
             <tr>
               <th className="px-6 py-4">Employee</th>
+              <th className="px-6 py-4">Department</th>
               <th className="px-6 py-4">Contact</th>
-              <th className="px-6 py-4">Role & Dept</th>
-              <th className="px-6 py-4">Salary</th>
-              <th className="px-6 py-4">Joined Date</th>
+              <th className="px-6 py-4">Joined</th>
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800">
-            {filteredStaff.length > 0 ? (
-              filteredStaff.map((person) => (
-                <tr key={person.id} className="hover:bg-zinc-800/50 transition-colors group">
-                  
-                  {/* Employee Name & Image */}
+            {loading ? (
+              <tr><td colSpan={5} className="p-4 text-center">Loading...</td></tr>
+            ) : staffList.length > 0 ? (
+              staffList.map((person) => (
+                <tr key={person.id} className="group hover:bg-zinc-800/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden border border-zinc-700">
-                        {person.profile_image ? (
-                          // Adjust the base URL if your images are stored relatively
-                          <img 
-                            src={`http://localhost:5000/${person.profile_image}`} 
-                            alt={person.first_name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-xs font-bold text-zinc-500">
-                            {person.first_name[0]}{person.last_name[0]}
-                          </span>
-                        )}
+                      <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden border border-zinc-700">
+                        <img 
+                            src={getImageUrl(person.profile_image as string)} 
+                            alt={person.first_name} 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                                const target = e.currentTarget;
+                                // Only switch to placeholder if not already there to avoid loop
+                                if (target.src !== PLACEHOLDER_IMAGE) {
+                                    console.warn("Failed loading:", target.src);
+                                    target.src = PLACEHOLDER_IMAGE;
+                                }
+                            }} 
+                        />
                       </div>
                       <div>
-                        <div className="font-medium text-white">
-                          {person.first_name} {person.last_name}
-                        </div>
-                        <div className="text-xs text-zinc-500">ID: {person.user_id}</div>
+                        <div className="font-medium text-white">{person.first_name} {person.last_name}</div>
+                        <div className="text-xs">{person.position}</div>
                       </div>
                     </div>
                   </td>
-
-                  {/* Contact */}
+                  <td className="px-6 py-4">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300">
+                      {person.department}
+                    </span>
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <FiPhone className="w-3 h-3" /> {person.phone}
-                      </div>
+                      <span className="flex items-center gap-2"><FiPhone className="w-3 h-3" /> {person.phone}</span>
                     </div>
                   </td>
-
-                  {/* Role & Dept */}
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-white">{person.position}</div>
-                    <div className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-primary/10 text-brand-secondary mt-1">
-                      {person.department}
-                    </div>
-                  </td>
-
-                  {/* Salary */}
-                  <td className="px-6 py-4 font-mono text-zinc-300">
-                    ${Number(person.salary).toLocaleString()}
-                  </td>
-
-                  {/* Joining Date */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <FiCalendar className="w-3 h-3" />
                       {new Date(person.joining_date).toLocaleDateString()}
                     </div>
                   </td>
-
-                  {/* Actions */}
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-2 hover:bg-brand-primary/20 text-brand-secondary rounded-lg transition-colors" title="Edit">
-                        <FiEdit2 className="w-4 h-4" />
+                      <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => navigate(`/staff/view/${person.id}`)} className="p-2 hover:bg-blue-500/20 text-blue-500 rounded-lg" title="View">
+                        <FiEye />
                       </button>
-                      <button 
-                        onClick={() => handleDelete(person.id)}
-                        className="p-2 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors" 
-                        title="Delete"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
+                      <button onClick={() => navigate(`/staff/edit/${person.id}`)} className="p-2 hover:bg-yellow-500/20 text-yellow-500 rounded-lg" title="Edit">
+                        <FiEdit />
                       </button>
-                    </div>
+                      <button onClick={() => handleDelete(person.id!)} className="p-2 hover:bg-red-500/20 text-red-500 rounded-lg" title="Delete">
+                        <FiTrash2 />
+                      </button>
+                      </div>
                   </td>
-
                 </tr>
               ))
             ) : (
-              <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-zinc-500">
-                  No staff members found.
-                </td>
-              </tr>
+               <tr><td colSpan={5} className="p-4 text-center">No staff found</td></tr>
             )}
           </tbody>
         </table>

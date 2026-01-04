@@ -252,3 +252,34 @@ exports.deleteStaff = async (req, res) => {
     connection.release();
   }
 };
+
+exports.getStaffById = async (req, res) => {
+  try {
+    const staffId = req.params.id;
+    
+    // Join Staff -> Users -> Roles to get complete details
+    const query = `
+      SELECT 
+        s.*, 
+        u.username, 
+        u.email, 
+        u.role_id,
+        r.name as role_name
+      FROM staff s
+      JOIN users u ON s.user_id = u.id
+      JOIN roles r ON u.role_id = r.id
+      WHERE s.id = ?
+    `;
+
+    const [staff] = await db.query(query, [staffId]);
+
+    if (staff.length === 0) {
+      return res.status(404).json({ message: 'Staff member not found' });
+    }
+
+    res.json(staff[0]);
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

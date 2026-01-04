@@ -1,14 +1,15 @@
 import axios from 'axios';
 
-// 1. Create the Axios instance with your common Base URL
+// 1. Define the Server URL here (One place to change for deployment)
+export const SERVER_URL = 'http://localhost:5000'; 
+
 const client = axios.create({
-  baseURL: 'http://localhost:5000/api/', // Common link
+  baseURL: `${SERVER_URL}/api`, // 2. Append '/api' for data requests
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// 2. (Optional) Interceptor to attach the token if a user is already logged in
 client.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -17,9 +18,7 @@ client.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 export default client;
